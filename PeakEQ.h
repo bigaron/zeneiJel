@@ -3,54 +3,83 @@
 #define _USE_MATH_DEFINES
 
 #include <math.h>
+#include <cmath>
 #include <JuceHeader.h>
 
 class PeakEQ {
 	float fs, g, fc, fb, V0;
-	float d, P;
+	float Wc, Wb;
+	float d, H0;
 	float cBoost, cCut, c;
-	float x0, x1, xI, yI;
+	float x1, x2, xH, yH;
+	float yPrev[3];
+	float xPrev[3];
 	int channelN;
 public:
 	PeakEQ() {
 		fs = g = fc = fb = V0 = 0;
-		d = P = cBoost = cCut = c = 0;
-		x0 = x1 = xI = yI = 0;
+		d = H0 = cBoost = cCut = c = 0;
+		x2 = x1 = xH = yH = 0;
 		channelN = 0;
 	}
 	PeakEQ(float fs, float g, float fc, float fb, int channelN) : fs(fs), g(g), fc(fc), fb(fb), channelN(channelN){
-		d = -cos(fc / fs);
+		Wc = 2 * fc / fs;
+		Wb = 2 * fb / fs;
 		V0 = pow(10, g / 20);
-		P = V0 - 1;
-		float coEff =  std::tanf(M_PI * fb / fs);
-		cBoost = (coEff - 1) / (coEff + 1);
-		cCut = (coEff - V0) / (coEff + V0);
-		c = g > 0 ? cBoost : cCut;
-		x0 = x1 = yI = xI = 0;
+		H0 = V0 - 1;
+		setGain(g);
+		cBoost = (tan(M_PI * Wb / 2) - 1) / (tan(M_PI * Wb / 2) + 1);
+		cCut = (tan(M_PI * Wb / 2) - V0) / (tan(M_PI * Wb / 2) + V0);
+		d = -cos(M_PI * Wc);
+		x1 = x2 = 0;
 	}
 
 	void setGain(float g) { 
 		this->g = g; 
-		c = g > 0 ? cBoost : cCut;
+		c = g >= 0 ? cBoost : cCut;
+	}
+
+	float A2(float xn) {
+		float p1 = c * yPrev[1] - d * (1 - c) * yPrev[0];
+		float p2 = -c * xn + d * (1 - c) * xPrev[0] + xPrev[1];
+		xPrev[1] = xPrev[0];
+		xPrev[0] = xn;
+		yPrev[1] = yPrev[0];
+		yPrev[0] = p1 + p2;
+
+		return p1 + p2;
+	}
+	void resetXN() {
+		x1 = x2 = 0;
 	}
 
 	void transferFunction(float* xn) {
-		/*for (int chIdx = 0; chIdx < channelN; ++chIdx) {
-			for (int i = 0; i < in.getNumSamples(); ++i) {
-				xI = in.getSample(chIdx, i) - d*(1-c)*x0 + c*x1;
-				y1 = -c * xI + d * (1 - c) * x0 + x1;
-				x0 = xI;
-				x1 = x0;
-				out.setSample(chIdx,i, 0.5 * P * (in.getSample(chIdx, i) - y1) + in.getSample(chIdx, i));
+		float tmp = *xn;
+		float xh_new = tmp - d * (1 - c) * x1 + c * x2;
+		float ap_y = -c * xh_new + d * (1 - c) * x1 + x2;
+		x2 = x1;
+		x1 = xh_new;
+		tmp = 0.5 * H0 * (tmp - ap_y) + tmp;
+		*xn = tmp;
+	}
+
+	void process(juce::AudioBuffer<float>& buffer) {
+		float xh[] = {0.f, 0.f}, xh_new;
+		float y1;
+		for (auto ch = 0; ch < buffer.getNumChannels(); ++ch) {
+			auto chSample = buffer.getWritePointer(ch);
+
+			for (auto sample = 0; sample < buffer.getNumSamples(); ++sample) {
+				const auto value = chSample[sample];
+				xh_new = value - d * (1 - c) * xh[0] + c * xh[1];
+				y1 = -c * xh_new + d * (1 - c) * xh[0] + xh[1];
+				auto out = value + H0 / 2 * (value - y1);
+				xh[1] = xh[0];
+				xh[0] = xh_new;
+				chSample[sample] = out;
 			}
 		}
 
-		return out;*/
 
-		xI = *xn - d * (1 - c) * x0 + c * x1;
-		yI = -c * xI + d * (1 - c) * x0 + x1;
-		x0 = xI;
-		x1 = x0;
-		*xn *= 0.5 * P * (*xn - yI) + *xn;
 	}
 };

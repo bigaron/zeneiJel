@@ -96,7 +96,8 @@ void _11BandEqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 
-    eq1 = PeakEQ(sampleRate, 3, 30, 15, getTotalNumInputChannels());
+    eq1 = PeakEQ(sampleRate, -15, 0.05, 0.01, getTotalNumInputChannels());
+    eq2 = PeakEQ(sampleRate, -20, 0.02, 0.02, getTotalNumInputChannels());
 }
 
 void _11BandEqAudioProcessor::releaseResources()
@@ -152,18 +153,7 @@ void _11BandEqAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        for (int n = 0; n < buffer.getNumSamples(); ++n) {
-            auto* channelData = buffer.getWritePointer(channel, n);
-            if (*channelData != 0) {
-                n = n;
-            }
-            eq1.transferFunction(channelData);
-            n = n;
-        }
-        // ..do something to the data...
-    }
+    eq1.process(buffer);
 }
 
 //==============================================================================

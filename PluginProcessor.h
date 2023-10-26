@@ -21,6 +21,8 @@ class _11BandEqAudioProcessor  : public juce::AudioProcessor
 {
 
     PeakEQ eq1;
+    PeakEQ eq2;
+    PeakEQ eq3;
 public:
     //==============================================================================
     _11BandEqAudioProcessor();
