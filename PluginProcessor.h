@@ -9,7 +9,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+//#include <juce_core/text/juce_String.h>
 #include "PeakEQ.h"
+#include "filter.h"
 
 //==============================================================================
 /**
@@ -20,10 +22,8 @@ class _11BandEqAudioProcessor  : public juce::AudioProcessor
                             #endif
 {
 
-    PeakEQ eq1;
-    PeakEQ eq2;
-    PeakEQ eq3;
 public:
+    std::vector<Filter> filters;
     //==============================================================================
     _11BandEqAudioProcessor();
     ~_11BandEqAudioProcessor() override;

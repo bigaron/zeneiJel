@@ -22,7 +22,9 @@ _11BandEqAudioProcessor::_11BandEqAudioProcessor()
                        )
 #endif
 {
+    filters = std::vector<Filter>(10);
 }
+
 
 _11BandEqAudioProcessor::~_11BandEqAudioProcessor()
 {
@@ -95,9 +97,16 @@ void _11BandEqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-
-    eq1 = PeakEQ(sampleRate, -15, 0.05, 0.01, getTotalNumInputChannels());
-    eq2 = PeakEQ(sampleRate, -20, 0.02, 0.02, getTotalNumInputChannels());
+    filters[0] = Filter(sampleRate, 31.25, 31.25, 0);
+    filters[1] = Filter(sampleRate, 31.25, 62.5, 0);
+    filters[2] = Filter(sampleRate, 62.5, 125, 0);
+    filters[3] = Filter(sampleRate, 125, 250, 0);
+    filters[4] = Filter(sampleRate, 250, 500, 0);
+    filters[5] = Filter(sampleRate, 500, 1000, -10);
+    filters[6] = Filter(sampleRate, 1000, 2000, 0);
+    filters[7] = Filter(sampleRate, 2000, 4000, 0);
+    filters[8] = Filter(sampleRate, 4000, 8000, 0);
+    filters[9] = Filter(sampleRate, 8000, 16000, 0);
 }
 
 void _11BandEqAudioProcessor::releaseResources()
@@ -153,7 +162,13 @@ void _11BandEqAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    eq1.process(buffer);
+        
+    for (int i = 0; i < filters.size(); ++i) {
+        filters[i].processBuffer(buffer);
+    }
+    
+   //eq1.process(buffer);
+  // eq2.process(buffer);
 }
 
 //==============================================================================
