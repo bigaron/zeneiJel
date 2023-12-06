@@ -97,12 +97,12 @@ void _11BandEqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-    filters[0] = Filter(sampleRate, 31.25, 31.25, 0);
+    filters[0] = Filter(sampleRate, 30, 31.25, 0);
     filters[1] = Filter(sampleRate, 31.25, 62.5, 0);
-    filters[2] = Filter(sampleRate, 62.5, 125, 0);
-    filters[3] = Filter(sampleRate, 125, 250, 0);
-    filters[4] = Filter(sampleRate, 250, 500, 0);
-    filters[5] = Filter(sampleRate, 500, 1000, -10);
+    filters[2] = Filter(sampleRate, 50, 125, 0);
+    filters[3] = Filter(sampleRate, 75, 250, 0);
+    filters[4] = Filter(sampleRate, 100, 500, 0);
+    filters[5] = Filter(sampleRate, 500, 1000, 0);
     filters[6] = Filter(sampleRate, 1000, 2000, 0);
     filters[7] = Filter(sampleRate, 2000, 4000, 0);
     filters[8] = Filter(sampleRate, 4000, 8000, 0);
@@ -163,10 +163,13 @@ void _11BandEqAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
         
+    filters[0].lowPassBuffer(buffer);
+
     for (int i = 0; i < filters.size(); ++i) {
         filters[i].processBuffer(buffer);
     }
-    
+
+    //filters[4].processBuffer(buffer);
    //eq1.process(buffer);
   // eq2.process(buffer);
 }
